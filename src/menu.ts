@@ -67,7 +67,6 @@ export function buildMenu(root: HTMLElement, o: MenuOpts) {
   const go = el('button', 'rs-go', panel); px(go, '{play} GO', { k: 2, color: '#ffe14a', shadow: false });
   // Zeiten & Sterne zurücksetzen, mit Sicherheitsabfrage (Ja/Abbrechen)
   const bReset = el('button', 'rs-reset', cfgCard); const resetTx = px(bReset, '', { shadow: false, color: '#9fb4d8' });
-  const about = el('div', 'about', cfgCard); px(about, 'LoReLy · MIT · three.js', { shadow: false, k: 0.8, color: '#7f8fb8' });   // Lizenz-Hinweis (Eigennamen, nicht übersetzt)
   const ask = el('div', 'rs-end rs-ask hidden', menu); const card = el('div', 'card', ask), askTx = px(card, '', { k: 2, color: '#ffffff' });
   const askBtns = el('div', 'btns', card), bYes = el('button', 'yes', askBtns), bNo = el('button', 'no', askBtns);
   const yesTx = px(bYes, '', { k: 2, shadow: false, color: '#ff8a8a' }), noTx = px(bNo, '', { k: 2, shadow: false });

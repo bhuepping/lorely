@@ -205,7 +205,6 @@ html, body { overscroll-behavior: none; touch-action: none; }   /* kein Pull-to-
 .rs-end .btns button.log { min-width: 0; padding-inline: calc(var(--u) * 3); }
 .rs-root canvas.px.rs-fps.hidden { display: none; }
 .rs-cfg button.rs-reset { height: max(44px, calc(var(--u) * 16)); min-width: calc(var(--u) * 24); background: transparent; border-color: #2a3566; }
-.rs-cfg .about { display: flex; justify-content: center; margin-top: calc(var(--u) * 2); }
 
 /* Tastatur-Fokus – kantiger 2-px-Rahmen, blinkt in Pixel-Schritten; nur nach Tastenbenutzung (.kb), nie auf Touch */
 .rs-root button:focus-visible { outline: none; }
