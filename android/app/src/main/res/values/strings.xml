@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LoReLy</string>
+    <string name="title_activity_main">LoReLy</string>
+    <string name="package_name">de.huepping.lorely</string>
+    <string name="custom_url_scheme">de.huepping.lorely</string>
+</resources>

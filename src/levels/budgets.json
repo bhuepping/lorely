@@ -1,0 +1,164 @@
+{
+ "waldweg": {
+  "hatch": 111,
+  "buggy": 120,
+  "rally": 110,
+  "jeep": 109
+ },
+ "kuppenstrecke": {
+  "hatch": 118,
+  "buggy": 114,
+  "rally": 108,
+  "jeep": 106
+ },
+ "see": {
+  "hatch": 107,
+  "buggy": 110,
+  "rally": 111,
+  "jeep": 107
+ },
+ "kehrenhang": {
+  "hatch": 161,
+  "buggy": 187,
+  "rally": 164,
+  "jeep": 161
+ },
+ "etappe_schnee": {
+  "hatch": 140,
+  "buggy": 173,
+  "rally": 141,
+  "jeep": 132
+ },
+ "neonallee": {
+  "hatch": 114,
+  "buggy": 114,
+  "rally": 111,
+  "jeep": 114
+ },
+ "hochhausring": {
+  "hatch": 127,
+  "buggy": 134,
+  "rally": 126,
+  "jeep": 130
+ },
+ "regenfahrt": {
+  "hatch": 121,
+  "buggy": 139,
+  "rally": 121,
+  "jeep": 125
+ },
+ "kreiselviertel": {
+  "hatch": 95,
+  "buggy": 96,
+  "rally": 95,
+  "jeep": 99
+ },
+ "etappe_stadt": {
+  "hatch": 158,
+  "buggy": 162,
+  "rally": 157,
+  "jeep": 160
+ },
+ "promenade": {
+  "hatch": 103,
+  "buggy": 103,
+  "rally": 98,
+  "jeep": 102
+ },
+ "wasserlinie": {
+  "hatch": 102,
+  "buggy": 117,
+  "rally": 99,
+  "jeep": 97
+ },
+ "duenenpfad": {
+  "hatch": 95,
+  "buggy": 121,
+  "rally": 96,
+  "jeep": 94
+ },
+ "muschelweg": {
+  "hatch": 126,
+  "buggy": 135,
+  "rally": 118,
+  "jeep": 119
+ },
+ "etappe_strand": {
+  "hatch": 148,
+  "buggy": 153,
+  "rally": 140,
+  "jeep": 138
+ },
+ "weinberg": {
+  "hatch": 98,
+  "buggy": 97,
+  "rally": 95,
+  "jeep": 97
+ },
+ "uferstrasse": {
+  "hatch": 104,
+  "buggy": 110,
+  "rally": 104,
+  "jeep": 98
+ },
+ "loreley": {
+  "hatch": 142,
+  "buggy": 153,
+  "rally": 141,
+  "jeep": 132
+ },
+ "burgweg": {
+  "hatch": 105,
+  "buggy": 108,
+  "rally": 102,
+  "jeep": 105
+ },
+ "etappe_rhein": {
+  "hatch": 140,
+  "buggy": 147,
+  "rally": 147,
+  "jeep": 140
+ },
+ "koelner_ufer": {
+  "hatch": 111,
+  "buggy": 113,
+  "rally": 106,
+  "jeep": 106
+ },
+ "etappe_vorstadt": {
+  "hatch": 127,
+  "buggy": 154,
+  "rally": 122,
+  "jeep": 124
+ },
+ "matschgrube": {
+  "hatch": 131,
+  "buggy": 129,
+  "rally": 126,
+  "jeep": 102
+ },
+ "huegel": {
+  "hatch": 140,
+  "buggy": 115,
+  "rally": 114,
+  "jeep": 104
+ },
+ "furtwald": {
+  "hatch": 121,
+  "buggy": 121,
+  "rally": 115,
+  "jeep": 112
+ },
+ "steilhang": {
+  "hatch": 184,
+  "buggy": 184,
+  "rally": 184,
+  "jeep": 136
+ },
+ "moorwald": {
+  "hatch": 164,
+  "buggy": 164,
+  "rally": 164,
+  "jeep": 122
+ }
+}

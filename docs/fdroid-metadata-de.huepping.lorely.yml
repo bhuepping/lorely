@@ -1,0 +1,42 @@
+# Entwurf des fdroiddata-Rezepts (metadata/de.huepping.lorely.yml).
+# Summary/Description kommen aus fastlane/ im App-Repo.
+# Vor dem Merge Request: `commit` auf den vollen Git-Hash des Tags setzen und die Kategorie gegen
+# config/categories.yml von fdroiddata prüfen.
+# Node: Der sudo-Block holt npm aus Debian "forky" (nodejs 24); Vite 8 verlangt node ^20.19 || >=22.12.
+# scandelete entfernt node_modules/ nach dem Build (Gradle braucht es vorher für capacitor.settings.gradle).
+
+Categories:
+  - Games
+License: MIT
+AuthorName: Björn Hüpping
+SourceCode: https://github.com/bhuepping/lorely
+IssueTracker: https://github.com/bhuepping/lorely/issues
+
+AutoName: LoReLy
+
+RepoType: git
+Repo: https://github.com/bhuepping/lorely.git
+
+Builds:
+  - versionName: '0.1'
+    versionCode: 1
+    commit: v0.1
+    subdir: android/app
+    sudo:
+      - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
+      - apt-get update
+      - apt-get install -y -t forky npm
+    init:
+      - cd ../..
+      - npm ci
+      - npm run build
+      - npx cap sync android
+    gradle:
+      - yes
+    scandelete:
+      - node_modules/
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '0.1'
+CurrentVersionCode: 1

@@ -1,0 +1,7 @@
+LoReLy (Low Res Rally) is a minimalist retro-style 3D rally game with its own driving physics.
+
+Six worlds: Snow, City, Beach, Rhine, Offroad and Suburb. Four cars with different handling; ice, sand, mud, gravel and cobblestones change the grip.
+
+Two modes: Time Trial (best time per car) and Collect (gather the stars).
+
+The app runs fully offline, needs no permissions and has no tracking, no ads and no accounts. Free and open source under the MIT license, built with three.js.

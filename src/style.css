@@ -1,0 +1,223 @@
+html, body { overscroll-behavior: none; touch-action: none; }   /* kein Pull-to-Refresh/Gummiband während der Fahrt */
+/* 80er-Arcade: Pixel-Schrift/Sprites (pixel.ts), harte Kanten, kein Glas, schwarz + gelb/rot/weiß. --u = Größe eines UI-Pixels (game.ts resize) */
+.rs-root { --sat: env(safe-area-inset-top, 0px); --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px); --sab: env(safe-area-inset-bottom, 0px); --u: 2px; --A: #39e6ff; --R: #ff4a5a; --glass: rgba(6, 10, 22, .55); --edge: rgba(150, 225, 255, .5); --tb: max(36px, calc(var(--u) * 16)); position: relative; width: 100%; height: 100%; overflow: hidden; background: #000;
+  font-family: monospace; font-weight: bold; color: #fff;
+  container-type: size; user-select: none; -webkit-user-select: none; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.rs-root.in-menu, .rs-root.in-menu button { touch-action: pan-y; }   /* Auswahl: nur die Liste scrollt, vertikal, in sich */
+.rs-root canvas.px { image-rendering: pixelated; display: block; pointer-events: none; }
+.rs-canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: pixelated; display: block; }
+/* dunkles Glas: halbtransparent, 1-Pixel-Rahmen, eine Akzentfarbe (--A); Alarm nur rot (--R) */
+.pbox, .rs-root button { background: var(--glass); border: 1px solid var(--edge); border-radius: 0; box-sizing: border-box; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.rs-root button { color: #fff; font: inherit; cursor: pointer; touch-action: none; padding: var(--u) calc(var(--u) * 2);
+  display: flex; align-items: center; justify-content: center; gap: calc(var(--u) * 2); }
+.rs-root button:active, .rs-root button.on { background: rgba(57, 230, 255, .26); border-color: var(--A); box-shadow: inset 0 0 0 1px rgba(57, 230, 255, .3); }
+/* Obere Leiste: links Tempo (+ Untergrund), Mitte Restzeit, rechts Pause + Vollbild; jedes Teil sitzt für sich, die Tests prüfen Überlappung */
+.rs-top { position: absolute; left: var(--sal); right: var(--sar); top: 0; height: 0; pointer-events: none; }
+.rs-top > * { position: absolute; top: calc(var(--u) * 3 + var(--sat)); }
+.rs-col { left: calc(var(--u) * 3); display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * 1.5); }
+.rs-hud { display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * 0.5); padding: calc(var(--u) * 1) calc(var(--u) * 2); }
+.rs-hud .row { display: flex; align-items: flex-end; gap: calc(var(--u) * 2.5); }
+.rs-gas { width: calc(var(--u) * 16); height: calc(var(--u) * 1.5); background: rgba(255, 255, 255, .14); }
+.rs-gas div { height: 100%; width: 0; background: var(--A); }
+.rs-surf { padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5); }
+.rs-surf.empty { display: none; }
+.rs-mid { left: 50%; transform: translateX(-50%); }
+.rs-goal { display: flex; flex-direction: column; align-items: stretch; gap: calc(var(--u) * 1); padding: calc(var(--u) * 1) calc(var(--u) * 2); }
+.rs-goal .tbar { height: calc(var(--u) * 1.5); background: rgba(255, 255, 255, .14); }
+.rs-goal .tbar div { height: 100%; width: 100%; background: var(--A); }
+.rs-goal.stars { display: none; }
+.rs-plus { position: absolute; left: 100%; top: 0; margin-left: calc(var(--u) * 4); padding: calc(var(--u) * 0.75) calc(var(--u) * 2); opacity: 0; }
+.rs-plus.go { animation: rs-plus .9s steps(6); }
+@container (max-width: 440px) { .rs-plus { left: 50%; top: 100%; margin: calc(var(--u) * 4) 0 0; transform: translateX(-50%); } .rs-plus.go { animation-name: rs-plus-c; } }   /* schmal: das +N unter der Restzeit statt daneben */
+@keyframes rs-plus-c { 0% { opacity: 1; transform: translate(-50%, calc(var(--u) * 2)); } 99% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }
+@container (max-width: 440px) { #rs-time { --kx: .8; } }   /* Uhr „12:34“ ist breiter als eine Restzeit: eine Stufe kleiner, sonst klebt sie an Tempo und Knöpfen */
+@container (max-width: 380px) { #rs-speed, #rs-time { --kx: .75; } .rs-mid { left: auto; right: calc(var(--tb) * 3 + var(--u) * 7 + 10px); transform: none; } }   /* ≤ 380 px: große Ziffern eine Stufe kleiner, Restzeit rückt neben die Knöpfe – hält bis 320 px den Abstand */
+@container (max-width: 340px) { #rs-speed { --kx: .62; } #rs-time { --kx: .44; } .rs-tools { gap: calc(var(--u) * 1); } .rs-mid { right: calc(var(--tb) * 3 + var(--u) * 5 + 12px); } }   /* ≤ 340 px mit drei Knöpfen (Pause, Vollbild, Ansicht): Ziffern noch kleiner, Knöpfe enger */
+@keyframes rs-plus { 0% { opacity: 1; transform: translateY(calc(var(--u) * 2)); } 99% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+.rs-nav { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: calc(var(--u) * 2); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 1); padding: calc(var(--u) * 1) calc(var(--u) * 2); opacity: 0; transition: opacity .45s linear; }
+@container (max-width: 440px) { .rs-nav { margin-top: calc(var(--u) * 22); } }   /* schmal: unter Tempo + Untergrund, überlappt nichts */
+.rs-goal .cpn { align-self: center; }
+.rs-goal .cpn.hidden { display: none; }
+.rs-nav.on { opacity: .85; }
+.rs-nav canvas.nav { width: calc(var(--u) * 15); height: calc(var(--u) * 15); }
+.rs-nav .hint.hidden { display: none; }
+.rs-tools { right: calc(var(--u) * 3); display: flex; gap: calc(var(--u) * 2); pointer-events: auto; }
+.rs-tools button { width: var(--tb); height: var(--tb); padding: 0; }
+.rs-tools button.hidden { display: none; }
+.rs-top button.alert { border-color: var(--R); animation: rs-alert .8s steps(2) infinite; }
+@keyframes rs-alert { 0% { background: var(--glass); } 50% { background: rgba(255, 74, 90, .55); } }
+.rs-fps { position: absolute; right: calc(var(--u) * 3 + var(--sar)); top: calc(var(--u) * 38 + var(--tb) + var(--sat)); opacity: .6; pointer-events: none; }   /* unter der Minimap (rechts oben), kollidiert mit keiner Touch-Taste */
+/* Touch-Tasten: Rand frei für Systemgesten (Zurück seitlich >= 32 dp, Home-Leiste unten >= 24 dp), optisch trotzdem randnah */
+.rs-touch { position: absolute; inset: 0; pointer-events: none; container-type: normal;
+  --s: clamp(58px, min(28cqh, 22cqw), 130px); --g: 8px;
+  --mx: 8px; --my: 8px; }
+.rs-touch.hidden { display: none; }
+.rs-touch button { pointer-events: auto; width: var(--s); height: var(--s); padding: 0; background: rgba(8, 14, 28, .36); border-color: rgba(255, 255, 255, .28); }
+.rs-touch button:active, .rs-touch button.on { background: rgba(57, 230, 255, .3); border-color: var(--A); }
+.rs-touch .grp { position: absolute; bottom: max(var(--my), var(--sab)); display: flex; gap: var(--g); align-items: flex-end; }
+.rs-touch .gl { left: max(var(--mx), var(--sal)); }
+.rs-touch .gr { right: max(var(--mx), var(--sar)); }
+.rs-touch .gr { flex-direction: column; align-items: stretch; }
+.rs-touch .col { display: flex; gap: var(--g); align-items: flex-end; }
+.rs-touch .gas, .rs-touch .brk, .rs-touch .l, .rs-touch .r { height: calc(var(--s) * 1.4); }
+.rs-touch .hb { width: 100%; height: max(58px, calc(var(--s) * .7)); }   /* Balken über Bremse + Gas, kein Zielen */
+.rs-touch button.hidden { display: none; }
+
+/* ── Spielziel ── */
+.rs-root.in-menu .rs-top, .rs-root.in-menu .rs-fps, .rs-root.in-menu .rs-touch, .rs-root.in-menu .rs-prog { display: none; }
+.rs-prog { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--u) * 1.5); background: rgba(0, 0, 0, .5); pointer-events: none; }
+.rs-prog div { height: 100%; width: 0; background: var(--A); }
+
+/* ── Ziel: Restzeit groß (Zeitrennen) ── */
+.rs-finish { position: absolute; left: 50%; top: 28%; z-index: 1; transform: translateX(-50%); padding: calc(var(--u) * 2) calc(var(--u) * 5); pointer-events: none; max-width: 94%; box-sizing: border-box; }
+.rs-finish.hidden { display: none; }
+.rs-finish.go { animation: rs-fin 1.3s steps(10) both; }
+@keyframes rs-fin { 0% { opacity: 0; transform: translate(-50%, calc(var(--u) * 6)); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, calc(var(--u) * -2)); } 100% { opacity: 0; transform: translate(-50%, calc(var(--u) * -4)); } }
+
+/* ── Pause + Endanzeige ── */
+.rs-end { position: absolute; inset: 0; z-index: 2; padding: var(--sat) var(--sar) 0 var(--sal); box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #000; }
+.rs-end.hidden, .rs-menu.hidden { display: none; }
+.rs-end.rs-pause { background: rgba(0, 0, 0, .62); z-index: 3; }
+.rs-menu { overscroll-behavior: contain; max-height: 100%; }
+.rs-end .card { border: 1px solid var(--edge); background: rgba(6, 10, 22, .86); box-shadow: 0 0 0 1px #000, 0 0 calc(var(--u) * 8) rgba(57, 230, 255, .12);
+  padding: calc(var(--u) * 4) calc(var(--u) * 6); width: min(460px, 92%); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 3); max-height: 94%; box-sizing: border-box; }
+.rs-end .bar { width: 100%; height: calc(var(--u) * 2); background: rgba(255, 255, 255, .14); }
+.rs-end .bar div { height: 100%; background: var(--A); }
+.rs-end .won .bar div { background: var(--A); }
+.rs-end .info { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: calc(var(--u) * 2) calc(var(--u) * 6); max-width: 100%; }
+.rs-end .card > * { max-width: 100%; }
+.rs-end .card canvas.px { max-width: 100%; }
+.rs-end .btns { display: flex; gap: calc(var(--u) * 3); justify-content: center; margin-top: var(--u); }
+.rs-end button { min-height: 44px; padding: calc(var(--u) * 2) calc(var(--u) * 4); max-width: 100%; }
+.rs-end .btns { flex-wrap: wrap; max-width: 100%; }
+.rs-end button.again { border-color: var(--A); }
+.rs-end .opts { display: flex; gap: calc(var(--u) * 3); justify-content: center; flex-wrap: wrap; }
+.rs-end .opts button { width: max(56px, calc(var(--u) * 20)); min-height: 48px; height: max(48px, calc(var(--u) * 16)); padding: 0; }
+.rs-end .opts canvas.px { --kx: var(--ok, 1); }
+.rs-end .opts button.hidden { display: none; }
+.rs-end .opts .langs { display: flex; gap: calc(var(--u) * 1); }
+.rs-end .opts .langs button { width: max(40px, calc(var(--u) * 12)); }
+.rs-end .opts .langs button.on { border-color: var(--A); }
+
+/* ── Auswahl: 80er-Arcade-Titel (Sonnenuntergang, Horizont-Raster, Chrom-Logo, schlanke Zeilen) ── */
+.rs-menu { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 5); padding: calc(var(--u) * 5 + var(--sat)) calc(12px + var(--sar)) 12px calc(12px + var(--sal)); box-sizing: border-box;
+  overflow-y: auto; overflow-x: hidden; background: linear-gradient(rgba(7, 0, 26, .78) 0%, rgba(7, 0, 26, .25) 30%, rgba(7, 0, 26, 0) 50%, rgba(7, 0, 26, .55) 100%); }
+.rs-fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .7s linear; }
+.rs-fade.on { opacity: 1; }
+.rs-menu.hidden { display: none; }
+.rs-menu > .brand, .rs-menu > .panel { position: relative; z-index: 1; }
+.rs-menu .brand { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 1); flex: none; margin-top: calc(var(--u) * 2); }
+.rs-menu .brand canvas.logo { max-width: 100%; height: auto; }
+.rs-menu .panel { display: flex; flex-direction: column; align-items: stretch; gap: calc(var(--u) * 2.5); width: min(480px, 100%); flex: none; margin-top: auto; padding: calc(var(--u) * 2); background: rgba(8, 0, 28, .78); border: 1px solid #ff3fb4; box-sizing: border-box; }
+.rs-mrow { display: flex; gap: calc(var(--u) * 2); flex-wrap: wrap; justify-content: center; }
+.rs-mrow .sep { width: calc(var(--u) * 3); }
+.rs-menu button { border: 1px solid #3a4a8a; background: rgba(20, 10, 60, .7); box-shadow: none; border-radius: 0; color: #bfeaff; padding: 0 calc(var(--u) * 3); }
+.rs-menu button:active, .rs-menu button.on { transform: none; }
+.rs-menu button.on { border-color: #4ff; background: rgba(255, 63, 180, .28); box-shadow: 0 0 calc(var(--u) * 3) rgba(80, 255, 255, .45); }
+.rs-menu button.mode { min-width: calc(var(--u) * 17); height: max(36px, calc(var(--u) * 14)); }
+.rs-mrow.cars { flex-wrap: nowrap; }
+.rs-pick { display: flex; flex-direction: column; gap: calc(var(--u) * 2); }
+.rs-mrow .sep { flex: 0 0 auto; }
+.rs-menu button.mode.car { flex: 1 1 0; min-width: 0; height: max(64px, calc(var(--u) * 23)); padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * 1); }   /* Auto-Symbol + Bestwert darunter */
+.rs-menu button.mode.car canvas.px { --kx: var(--ok, 1); }   /* Auto-Symbole: Zellen 3 px */
+@container (max-width: 420px) { .rs-menu button.mode.car canvas.px { --kx: calc(var(--ok, 1) * .86); } }   /* schmal: vier Autos (mit Jeep) passen nebeneinander */
+@container (max-width: 340px) { .rs-menu button.mode.car canvas.px { --kx: calc(var(--ok, 1) * .78); } }
+.rs-menu button.world { height: max(34px, calc(var(--u) * 13)); gap: calc(var(--u) * 2); }
+.rs-menu .levels { display: flex; flex-direction: column; gap: calc(var(--u) * 1); }
+.rs-menu button.level.ghost { visibility: hidden; pointer-events: none; }   /* leerer Platz, gleiche Höhe */
+.rs-menu .rs-pager { display: flex; align-items: center; justify-content: space-between; height: 28px; flex: none; }
+.rs-menu .rs-pager.off { visibility: hidden; }
+.rs-menu .rs-pager button.pg { width: calc(var(--u) * 24); height: 28px; min-width: 0; padding: 0; position: relative; }
+.rs-menu .rs-pager button.pg::after { content: ''; position: absolute; left: 50%; top: 50%; margin: -5px 0 0 -3px; border: 5px solid transparent; border-left: 6px solid #bfeaff; border-right-width: 0; }
+.rs-menu .rs-pager button.pg.prev::after { margin-left: -3px; border-left-width: 0; border-right: 6px solid #bfeaff; }
+.rs-menu .rs-pager button.pg:disabled { opacity: .3; }
+.rs-menu .rs-pager .dots { display: flex; gap: 8px; }
+.rs-menu .rs-pager .dot { width: 8px; height: 8px; background: #3a4a8a; }
+.rs-menu .rs-pager .dot.on { background: #4ff; }
+/* Level-Zeile zweizeilig: links Nummer, rechts Name (ganz) und darunter Auto + Zeit + Sterne */
+.rs-menu button.level { width: 100%; height: max(50px, calc(var(--u) * 25)); display: grid; grid-template-columns: calc(var(--u) * 9) minmax(0, 1fr); grid-template-rows: 1fr auto; row-gap: calc(var(--u) * 1); column-gap: calc(var(--u) * 2); align-content: center; justify-items: start; text-align: left; border-width: 0 0 1px 0; background: rgba(20, 10, 60, .35); padding: 0 calc(var(--u) * 3); overflow: hidden; }
+.rs-menu button.level > canvas.px:first-child { grid-row: 1 / 3; grid-column: 1; align-self: center; }
+.rs-menu button.level .nm { grid-column: 2; grid-row: 1; align-self: end; }
+.rs-menu button.level .meta { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 4); width: 100%; min-width: 0; }
+.rs-menu button.rs-go { width: 100%; height: max(44px, calc(var(--u) * 24)); border-color: #ffe14a; color: #ffe14a; background: rgba(255, 225, 74, .12); box-shadow: 0 0 calc(var(--u) * 2) rgba(255, 225, 74, .35); }
+.rs-menu button.rs-go:active { background: rgba(255, 225, 74, .35); }
+.rs-menu button.level:active { background: rgba(255, 63, 180, .35); }
+/* eng: wenn die Auswahl sonst nicht ins Bild passt (kurze Handys, 6 Strecken) – Untertitel bleibt dadurch sichtbar */
+.rs-menu.tight { gap: calc(var(--u) * 3); }
+.rs-menu.tight .panel { gap: calc(var(--u) * 1); padding: calc(var(--u) * 1) calc(var(--u) * 1.5); }
+.rs-menu.tight .rs-pick { gap: calc(var(--u) * 1.5); }
+.rs-menu.tight .rs-mrow { gap: calc(var(--u) * 1.5); }
+.rs-menu.tight button.mode { height: max(30px, calc(var(--u) * 12)); }
+.rs-menu.tight button.mode.car { height: max(58px, calc(var(--u) * 21)); gap: 0; }
+.rs-menu.tight button.world { height: max(28px, calc(var(--u) * 11)); }
+.rs-menu.tight button.level { height: max(42px, calc(var(--u) * 20)); }
+.rs-menu.tight button.level .meta canvas.px { --kx: .75; }   /* Zeit/Stern/Auto-Symbol eine Stufe kleiner (1,5 px je Bildpunkt bei --u 2) */
+.rs-menu.tight button.rs-go { height: max(40px, calc(var(--u) * 18)); }
+@container (min-aspect-ratio: 13/10) {
+  .rs-menu { flex-direction: row; align-items: center; justify-content: space-around; padding: calc(var(--u) * 4); }
+  .rs-menu .panel { margin-top: 0; width: min(52cqw, 520px); max-height: 100%; overflow-y: auto; gap: calc(var(--u) * 2.5); padding: calc(var(--u) * 2); }
+  .rs-pick { flex-direction: row; align-items: center; justify-content: center; gap: calc(var(--u) * 3); }
+  .rs-pick .rs-mrow.cars { flex: 1; }
+  .rs-menu.tight button.rs-go { height: max(38px, calc(var(--u) * 16)); }
+  .rs-menu.tight { padding-block: calc(var(--u) * 2); }
+  .rs-menu.tight .levels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(var(--u) * 1) calc(var(--u) * 3); }   /* quer und zu niedrig: 2 Spalten, kein Scrollen im Panel */
+  .rs-menu.tight .levels.one { grid-template-columns: minmax(0, 1fr); }
+}
+@container (min-aspect-ratio: 13/10) and (min-width: 1000px) {
+  .rs-menu.tight button.world { height: 36px; }
+  .rs-menu.tight button.rs-go { height: 52px; }
+  .rs-menu.tight .levels:not(.one) button.level .meta canvas.px { --kx: .64; }   /* 2 Spalten à ~250 px (Tablet quer): Auto-Symbol + lange Zeit + Sterne müssen in eine Kachel */
+  .rs-menu.tight .levels:not(.one) button.level .meta { gap: calc(var(--u) * 1.5); }   /* „+123,4 s“ ist ein Zeichen breiter */
+}
+
+/* Karte: klein in der Ecke (Antippen = große Karte), Foto von oben + scharfe Linien in Gerätepixeln, Norden oben; nur der Auto-Pfeil bewegt sich */
+.rs-map { position: absolute; right: calc(var(--u) * 3 + var(--sar)); top: calc(var(--u) * 6 + var(--tb) + var(--sat)); width: calc(var(--u) * 30); height: calc(var(--u) * 30); padding: 0; display: block; background: rgba(0, 0, 0, .55); cursor: pointer; box-shadow: 0 0 0 1px #000; }
+.rs-map .map-cv, .rs-bigmap .map-cv { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rs-map .dot, .rs-bigmap .dot { position: absolute; left: calc(var(--x, 0) * 1%); top: calc(var(--y, 0) * 1%); width: 7%; height: 7%; margin: -3.5% 0 0 -3.5%; background: #ff2a1a; clip-path: polygon(50% 0, 100% 100%, 50% 72%, 0 100%); transform: rotate(var(--a, 0deg)); filter: drop-shadow(0 0 1px #000); animation: rs-blink .6s steps(2) infinite; pointer-events: none; }
+.rs-map.under { visibility: hidden; }
+.rs-bigmap { position: absolute; right: calc(var(--u) * 3 + var(--sar)); top: calc(var(--u) * 6 + var(--tb) + var(--sat)); width: 45vmin; height: 45vmin; background: #203040; z-index: 5; cursor: pointer; box-shadow: 0 0 0 1px #000; }   /* wächst aus der Ecke der Minikarte, kein Abdunkeln, Spiel läuft */
+.rs-bigmap.hidden { display: none; }
+.rs-bigmap .dot { width: 5%; height: 5%; margin: -2.5% 0 0 -2.5%; }
+@keyframes rs-blink { 0% { opacity: 1; } 50% { opacity: .25; } }
+.rs-root.in-menu .rs-map, .rs-root.in-menu .rs-bigmap { display: none; }
+
+/* Startampel: drei Lampen, mittig unter der oberen Leiste */
+.rs-lights { position: absolute; left: 50%; top: 26%; transform: translateX(-50%); display: flex; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3); pointer-events: none; }
+.rs-lights.hidden { display: none; }
+.rs-lights i { width: calc(var(--u) * 20); height: calc(var(--u) * 20); background: #2a0d0d; box-shadow: inset calc(var(--u) * -2) calc(var(--u) * -2) 0 #0006; }
+.rs-lights i.r { background: #ff2a1a; } .rs-lights i.g { background: #2aff4a; }
+.rs-lights.out { animation: rs-out .5s steps(4) forwards; }
+@keyframes rs-out { to { opacity: 0; } }
+
+/* Zurücksetzen im Menü (klein, am Panelende) + Sicherheitsabfrage */
+.rs-menu .rs-ask { z-index: 5; background: rgba(0, 0, 0, .72); }
+.rs-ask .btns { display: flex; gap: calc(var(--u) * 3); }
+.rs-ask button { height: max(44px, calc(var(--u) * 16)); min-width: calc(var(--u) * 24); }
+.rs-ask button.yes { border-color: #ff6a6a; }
+/* Zahnrad-Feld (Sprache + Zurücksetzen) */
+.rs-cfg .btns { align-items: center; }
+.rs-cfg button.lang { min-width: calc(var(--u) * 14); }
+.rs-cfg button.lang.on { border-color: var(--A); }
+.rs-cfg button.fs { min-width: calc(var(--u) * 14); }
+.rs-cfg button.fs.on, .rs-cfg button.dbg.on { border-color: var(--A); }
+.rs-cfg button.log.hidden { display: none; }
+.rs-cfg button.log:disabled { opacity: .4; }
+.rs-end .btns button.log { min-width: 0; padding-inline: calc(var(--u) * 3); }
+.rs-root canvas.px.rs-fps.hidden { display: none; }
+.rs-cfg button.rs-reset { height: max(44px, calc(var(--u) * 16)); min-width: calc(var(--u) * 24); background: transparent; border-color: #2a3566; }
+.rs-cfg .about { display: flex; justify-content: center; margin-top: calc(var(--u) * 2); }
+
+/* Tastatur-Fokus – kantiger 2-px-Rahmen, blinkt in Pixel-Schritten; nur nach Tastenbenutzung (.kb), nie auf Touch */
+.rs-root button:focus-visible { outline: none; }
+.rs-root.kb .kf { outline: 2px solid #ffe14a; outline-offset: 2px; animation: rs-kf .8s steps(2, jump-none) infinite; }
+.rs-root.kb .rs-end button.kf, .rs-root.kb .rs-menu .rs-cfg button.kf { outline-offset: 1px; }
+@keyframes rs-kf { 0% { outline-color: #ffe14a; } 100% { outline-color: #ff4fc0; } }
+/* gewählte Strecke = gefüllter Block + gelber Pfeil links; die übrigen bleiben ruhig */
+.rs-menu button.level { position: relative; }
+.rs-menu button.level.on { background: #52104c; border-color: #ffe14a; box-shadow: inset 0 0 0 2px #ff4fc0; }
+.rs-menu button.level.on::before { content: ''; position: absolute; left: 0; top: 50%; margin-top: -6px; border: 6px solid transparent; border-left: 7px solid #ffe14a; border-right-width: 0; }
+/* Lupe in der großen Karte (Nah/Übersicht) */
+.rs-bigmap .zoom { position: absolute; left: 2%; top: 2%; padding: calc(var(--u) * 1.5); background: rgba(0, 0, 0, .65); box-shadow: 0 0 0 1px #000; border: 0; cursor: pointer; z-index: 1; display: block; line-height: 0; }
+.rs-bigmap .zoom.on { background: #ff9f43; }
+.rs-bigmap .zoom.hidden { display: none; }
+.rs-toast { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); z-index: 9; padding: calc(var(--u) * 2) calc(var(--u) * 4); background: var(--glass); border: 1px solid var(--edge); pointer-events: none; }

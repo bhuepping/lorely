@@ -1,0 +1,8 @@
+{
+  "appId": "de.huepping.lorely",
+  "appName": "LoReLy",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}
