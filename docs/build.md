@@ -44,6 +44,23 @@ Vollbild immersiv, Ausschnitt-Ränder (Notch) per `viewport-fit=cover` und `--sa
 Gesten-Ausschluss an den unteren Ecken. Die Zurück-Taste (`src/native.ts`, Handler in `game.ts`) geht Endkarte → Menü,
 Karte zu, Pause → weiter, Rennen → Pause, Menü → App beenden. Vollbild-Knopf und Zahnrad-Schalter entfallen nativ.
 
+## Festgenagelte Versionen
+Gleicher Quellstand ergibt Byte für Byte dasselbe APK (Voraussetzung für F-Droid mit eigener Signatur).
+| Werkzeug | Version |
+|---|---|
+| Node | 22.14.0 (`node-v22.14.0-linux-x64.tar.xz`, sha256 `69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec`) |
+| npm-Pakete | `package-lock.json` (`npm ci`) |
+| JDK | 17 |
+| Gradle | 8.2.1, `distributionSha256Sum` im Wrapper |
+| Android-Gradle-Plugin | 8.2.1 |
+| Build-Tools / compileSdk / targetSdk / minSdk | 34.0.0 / 34 / 34 / 22 |
+| Capacitor | 6.2.3 |
+
+Keine Zeitstempel: `vite.config.ts` nimmt für die Version im Debug-Log `SOURCE_DATE_EPOCH` oder das Commit-Datum;
+`dependenciesInfo` ist im APK abgeschaltet, Gradle schreibt keine Git-Infos. Prüfung ohne Docker: `tools/repro-check.sh [REPO] [COMMIT] [signiertes.apk]`
+(zwei frische Clones, andere Zeitzone/umask/HOME, `cmp`, optional `apksigcopier compare`). Gegenprobe mit dem F-Droid-Image: `tools/fdroid-check.sh`.
+
 ## F-Droid
 Rezept-Entwurf: `docs/fdroid-metadata-de.huepping.lorely.yml` (für das Repo fdroiddata). Beschreibungen, Changelogs und Icon
-liegen unter `fastlane/metadata/android/`. Screenshots können unter `<sprache>/images/phoneScreenshots/` ergänzt werden.
+liegen unter `fastlane/metadata/android/`. Screenshots liegen unter `<sprache>/images/phoneScreenshots/` (1080x2340). F-Droid baut das Rezept nach und liefert das signierte Release-APK von GitHub aus,
+wenn beide Builds gleich sind (`Binaries`, `AllowedAPKSigningKeys`: SHA-256 des Zertifikats `f72dd4cc…da46f`).

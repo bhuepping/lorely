@@ -1,12 +1,12 @@
 # Entwurf des fdroiddata-Rezepts (metadata/de.huepping.lorely.yml).
 # Summary/Description kommen aus fastlane/ im App-Repo.
-# Vor dem Merge Request: `commit` auf den vollen Git-Hash des Tags setzen und die Kategorie gegen
-# config/categories.yml von fdroiddata prüfen.
-# Node: Der sudo-Block holt npm aus Debian "forky" (nodejs 24); Vite 8 verlangt node ^20.19 || >=22.12.
-# scandelete entfernt node_modules/ nach dem Build (Gradle braucht es vorher für capacitor.settings.gradle).
+# F-Droid baut reproduzierbar nach und liefert unser eigenes signiertes APK aus (Binaries + AllowedAPKSigningKeys).
+# Vor dem Merge Request: `commit` auf den vollen Git-Hash des Tags setzen (Tag v0.1 und GitHub-Release mit APK müssen existieren).
+# Node: offizielle Datei, Version und Prüfsumme wie in docs/build.md (nicht die Debian-Version, sonst kein Byte-gleiches APK).
+# Alles Bauen steht in `build:` (prebuild darf nichts bauen); node_modules/ entsteht erst nach dem Quellcode-Scan.
 
 Categories:
-  - Games
+  - Action Game
 License: MIT
 AuthorName: Björn Hüpping
 SourceCode: https://github.com/bhuepping/lorely
@@ -17,24 +17,26 @@ AutoName: LoReLy
 RepoType: git
 Repo: https://github.com/bhuepping/lorely.git
 
+Binaries: https://github.com/bhuepping/lorely/releases/download/v%v/LoReLy-%v.apk
+AllowedAPKSigningKeys: f72dd4cc0dcd77bb91f5e18cd940a0332dd8ccfb933546334c74b8db07eda46f
+
 Builds:
   - versionName: '0.1'
     versionCode: 1
     commit: v0.1
     subdir: android/app
     sudo:
-      - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
-      - apt-get update
-      - apt-get install -y -t forky npm
-    init:
+      - curl -fsSLo /tmp/node.tar.xz https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz
+      - echo "69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec  /tmp/node.tar.xz" | sha256sum -c -
+      - tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --exclude='*.md' --exclude=LICENSE
+      - node --version
+    build:
       - cd ../..
       - npm ci
       - npm run build
       - npx cap sync android
     gradle:
       - yes
-    scandelete:
-      - node_modules/
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
