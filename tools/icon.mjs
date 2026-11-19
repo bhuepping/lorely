@@ -1,6 +1,6 @@
 // App-Icon aus dem Spiel selbst: der Rallye-Wagen mit der echten Spielgeometrie, leicht quer in der Ecke der Vorstadt-Runde, Staubteilchen,
 // dahinter die Straße. Hintergrund und Vordergrund entstehen aus zwei Bildern derselben Pose (mit und ohne Wagen/Teilchen).
-// Aufruf (vorher npm run build): node tools/icon.mjs      -> 3 Varianten als Vorschau in $OUT (Standard /tmp/icon) + Übersicht sheet.png,
+// Aufruf (vorher npm run build): node tools/icon.mjs      -> 3 Varianten als Vorschau in $OUT (Standard icon-varianten/, nicht eingecheckt) + Übersicht sheet.png,
 //   die Variante $PICK (Standard 3) wird als Android-Icon (mipmap-*, Hintergrundebene) und fastlane/.../icon.png (512) geschrieben.
 // Adaptive Icons: Vordergrund (Wagen + Staub) liegt in der sicheren Mitte (Kreis, 66 % der 108-dp-Fläche), Hintergrund ist eine eigene Ebene.
 import { chromium } from 'playwright-core';
@@ -9,14 +9,15 @@ import { readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 const PW = process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
 const exe = `${PW}/${readdirSync(PW).find((d) => d.startsWith('chromium_headless_shell'))}/chrome-headless-shell-linux64/chrome-headless-shell`;
-const OUT = process.env.OUT ?? '/tmp/icon', PICK = Number(process.env.PICK ?? 3), PORT = Number(process.env.PORT ?? 4187);
+const OUT = process.env.OUT ?? 'icon-varianten', PICK = Number(process.env.PICK ?? 3), PORT = Number(process.env.PORT ?? 4187);
 const res = 'android/app/src/main/res';
 mkdirSync(OUT, { recursive: true });
 // Varianten: Blickrichtung relativ zum Wagen (vorn = 0, positiv = zur rechten Seite), Abstand, Höhe über dem Boden, Brennweite, Driftwinkel des Wagens
-const VARIANTS = [
-  { name: 'v1-vorne-rechts', az: 0.42, dist: 5.2, h: 0.3, fov: 46, slide: 0.5 },
-  { name: 'v2-vorne-links', az: -0.42, dist: 5.6, h: 0.28, fov: 44, slide: 0.55 },
-  { name: 'v3-hinten-rechts', az: 2.75, dist: 6.4, h: 0.7, fov: 44, slide: 0.5 },
+const VARIANTS = process.env.VARIANTS ? JSON.parse(process.env.VARIANTS) : [
+  { name: 'v1-oben-vorne-rechts', az: 0.7, dist: 6.0, elev: 28, fov: 38, slide: 0.5 },
+  { name: 'v2-oben-vorne-links', az: -0.7, dist: 6.2, elev: 24, fov: 38, slide: 0.55 },
+  { name: 'v3-hinten-rechts', az: 2.75, dist: 6.4, elev: 6, fov: 44, slide: 0.5 },
+  { name: 'v4-steil-vorne-links', az: -0.45, dist: 6.6, elev: 34, fov: 36, slide: 0.5 },
 ];
 const srv = spawn('node_modules/.bin/vite', ['preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
 for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://127.0.0.1:${PORT}/`)).ok) break; } catch {} await sleep(100); }
@@ -45,8 +46,11 @@ for (const v of VARIANTS) {
   }, [v]);
   await page.keyboard.down('ArrowUp'); await page.keyboard.down('ArrowRight'); await page.keyboard.down('Space');
   await sleep(1000);
-  await page.evaluate(() => { const g = window.__rennspiel, fx = g.session.fx; for (let i = 0; i < 4; i++) fx.land(g.car, 14); });
-  await sleep(450);
+  await page.evaluate(() => {   // feiner Staub hinter den Hinterrädern (kleine Pixelteilchen)
+    const g = window.__rennspiel, fx = g.session.fx, P = fx.pool, f = g.car.axes().f, w = [0, 0, 0], col = fx.cols.dust;
+    for (const wi of [2, 3]) { fx.wheel(g.car, wi, w); for (let i = 0; i < 90; i++) P.emit({ x: w[0] + (P.rnd() - 0.5) * 0.4, y: w[1] + 0.05, z: w[2] + (P.rnd() - 0.5) * 0.4, vx: -f[0] * (1 + P.rnd() * 5) + (P.rnd() - 0.5) * 2.5, vy: 0.2 + P.rnd() * 1.6, vz: -f[2] * (1 + P.rnd() * 5) + (P.rnd() - 0.5) * 2.5, life: 1.0 + P.rnd() * 0.6, size: 0.05 + P.rnd() * 0.1, grow: 1.1, drag: 1.4, grav: -0.15, r: col[0], g: col[1], b: col[2] }); }
+  });
+  await sleep(550);
   // jetzt einfrieren (Pause), Kamera auf den Wagen setzen
   await page.keyboard.press('KeyP'); await sleep(200);
   await page.keyboard.up('ArrowUp'); await page.keyboard.up('ArrowRight'); await page.keyboard.up('Space');
@@ -54,7 +58,9 @@ for (const v of VARIANTS) {
     const g = window.__rennspiel, car = g.car, cam = g.camera, fw = g.car.axes().f, yaw = Math.atan2(-fw[0], -fw[2]);
     const a = yaw + v.az, cx = car.pos[0] + (-Math.sin(a)) * v.dist, cz = car.pos[2] + (-Math.cos(a)) * v.dist, gy = g.session.course.terrain.height(cx, cz);
     cam.fov = v.fov; cam.aspect = 1; cam.updateProjectionMatrix();
-    cam.position.set(cx, Math.max(gy + v.h, gy + 0.25), cz); cam.lookAt(car.pos[0], car.pos[1] - 0.05, car.pos[2]); cam.updateMatrixWorld();
+    // Lampen im Icon nicht überstrahlt: Helligkeit dämpfen
+    const cm = g.carMesh; cm.fill(cm.lampCol, cm.seg.aux, [0.5, 0.46, 0.32]); cm.fill(cm.lampCol, cm.seg.head, [0.5, 0.46, 0.32]); cm.lampCol.needsUpdate = true;
+    cam.position.set(cx, Math.max(car.pos[1] + Math.tan(v.elev * Math.PI / 180) * v.dist, gy + 0.25), cz); cam.lookAt(car.pos[0], car.pos[1] - 0.05, car.pos[2]); cam.updateMatrixWorld();
     return { speed: car.speed.toFixed(1), n: g.session.fx.points?.geometry?.drawRange };
   }, [v]);
   console.log(v.name, JSON.stringify(info));
@@ -119,7 +125,8 @@ const outs = await page.evaluate(async ({ urls, SZ, sizes }) => {
 const save = (file, url) => { mkdirSync(file.slice(0, file.lastIndexOf('/')), { recursive: true }); writeFileSync(file, Buffer.from(url.split(',')[1], 'base64')); };
 save(`${OUT}/sheet.png`, outs.sheet);
 VARIANTS.forEach((v, i) => { save(`${OUT}/${v.name}-icon.png`, outs.res[i].preview); save(`${OUT}/${v.name}-fg.png`, outs.res[i].fgPreview); save(`${OUT}/${v.name}-bg.png`, outs.res[i].bgPreview); });
-// gewählte Variante in die App schreiben
+// gewählte Variante in die App schreiben (WRITE=0: nur Vorschau, z. B. für Testbilder mit VARIANTS=<json>)
+if (process.env.WRITE === '0') { await b.close(); srv.kill(); process.exit(0); }
 const jobs = [['fastlane/metadata/android/en-US/images/icon.png', 512, 'legacy']];
 for (const [d, s] of [['mdpi', 48], ['hdpi', 72], ['xhdpi', 96], ['xxhdpi', 144], ['xxxhdpi', 192]]) {
   jobs.push([`${res}/mipmap-${d}/ic_launcher.png`, s, 'legacy'], [`${res}/mipmap-${d}/ic_launcher_round.png`, s, 'round'], [`${res}/mipmap-${d}/ic_launcher_foreground.png`, s * 9 / 4, 'fg'], [`${res}/drawable-${d}/ic_launcher_background.png`, s * 9 / 4, 'bg']);

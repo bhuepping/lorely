@@ -115,8 +115,8 @@ function buildRallyBody(p: CarParams, mount: number[][]): THREE.Mesh {
     solid([x1, y1, z1], [x1, y1, z0], [x1, y2, z0], [x1, y2, z1], cell); solid([x0, y1, z0], [x0, y1, z1], [x0, y2, z1], [x0, y2, z0], cell);
     solid([x0, y2, z1], [x1, y2, z1], [x1, y2, z0], [x0, y2, z0], cell); solid([x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1], cell);
   };
-  // Zusatzscheinwerfer (6) vor dem Grill
-  for (const x of [-0.7, -0.42, -0.14, 0.14, 0.42, 0.7]) box(x * hw / 0.85, y0 + 0.33, Z(0) - 0.05, 0.22, 0.2, 0.12, G.lamp);
+  // Scheinwerfer (4) vor dem Grill
+  for (const x of [-0.64, -0.21, 0.21, 0.64]) box(x * hw / 0.85, y0 + 0.33, Z(0) - 0.05, 0.26, 0.2, 0.12, G.lamp);   // vier Scheinwerfer
   // Kotflügelbacken (kantig, breiter als der Unterbau); hinten dunkel wie der Rest der Lackierung
   mount.forEach((m, i) => box(Math.sign(m[0]) * (hw + 0.02), y0 + 0.25, m[2], 0.22, 0.34, 1.0, i < 2 ? G.white : G.brown));
   // kleiner Heckflügel auf dem Deckel
@@ -406,8 +406,9 @@ export class CarMesh {
     };
     const mark = (k: string, from: number) => { seg[k] = [from, pos.length / 3 - from]; };
     let a = 0;
-    for (const sx of [-1, 1]) box(sx * w * 0.32, ly, -l / 2 - 0.02, 0.28, 0.14, 0.06); mark('head', a); a = pos.length / 3;
-    if (p.style === 'rally') { for (const x of [-0.7, -0.42, -0.14, 0.14, 0.42, 0.7]) box(x * hw / 0.85, ly, -l / 2 - 0.12, 0.2, 0.17, 0.04); mark('aux', a); a = pos.length / 3; }
+    if (p.style !== 'rally') for (const sx of [-1, 1]) box(sx * w * 0.32, ly, -l / 2 - 0.02, 0.28, 0.14, 0.06);
+    mark('head', a); a = pos.length / 3;
+    if (p.style === 'rally') { for (const x of [-0.64, -0.21, 0.21, 0.64]) box(x * hw / 0.85, ly, -l / 2 - 0.12, 0.24, 0.17, 0.04); mark('aux', a); a = pos.length / 3; }   // Rallye: genau vier Scheinwerfer
     for (const sx of [-1, 1]) box(sx * w * 0.36, ly, l / 2 + 0.02, 0.3, 0.12, 0.05); mark('tail', a); a = pos.length / 3;
     for (const sx of [-1, 1]) box(sx * w * 0.16, ly, l / 2 + 0.02, 0.14, 0.1, 0.05); mark('rev', a);
     this.lampN = pos.length / 3;
