@@ -49,8 +49,13 @@ $DOCKER run --rm -e ID="$ID" -e VC="$VC" -e ANDROID_HOME=/opt/android-sdk \
   sudo -u vagrant -H git config --global --add safe.directory "*"
   sudo --preserve-env --user vagrant env PATH=$fdroidserver:$PATH PYTHONPATH=$fdroidserver:$fdroidserver/examples \
     PYTHONUNBUFFERED=true HOME=$home_vagrant fdroid build --verbose --on-server --no-tarball $ID:$VC
+  java -version 2>&1 | head -n 1
   apk=$home_vagrant/unsigned/${ID}_${VC}.apk
   cp "$apk" /out/unsigned.apk
-  apksigcopier compare /out/signed.apk --unsigned "$apk"
-  sha256sum "$apk" | cut -d" " -f1 > /out/sha.txt' || fail "Build oder Vergleich fehlgeschlagen (Log oben)"
-echo "FDROID OK $(cat "$WORK/sha.txt")"
+  apksigcopier compare /out/signed.apk --unsigned "$apk" && touch /out/same' || true
+# Den Nachbau behalten, damit sich eine Abweichung danach in Ruhe eingrenzen lässt.
+[ -f "$WORK/unsigned.apk" ] || fail "Build fehlgeschlagen (Log oben)"
+cp "$WORK/unsigned.apk" "$HERE/fdroid-unsigned.apk"
+SHA=$(sha256sum "$WORK/unsigned.apk" | cut -d" " -f1)
+[ -f "$WORK/same" ] || fail "Nachbau weicht vom signierten APK ab, sha256 $SHA, liegt als fdroid-unsigned.apk im Repo"
+echo "FDROID OK $SHA"
