@@ -12,3 +12,5 @@ keystore.properties
 *.keystore
 *.jks
 HANDOFF.md
+fdroid-check.log
+*.apk.commit
