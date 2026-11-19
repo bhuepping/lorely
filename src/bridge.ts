@@ -73,6 +73,12 @@ export class Bridge {
     const h = this.route.nearestWithin(x, z, this.half);
     return h && h.s >= this.s0 && h.s <= this.s1 ? this.deckY(h.s) : null;
   }
+  /** Nur Optik: wie viel das Gelände-Mesh an dieser Stelle unter dem Deck abgesenkt wird (0 außerhalb; Physik unberührt) */
+  sink(x: number, z: number): number {
+    if (this.river || Math.hypot(x - this.cx, z - this.cz) > this.reach) return 0;
+    const h = this.route.nearestWithin(x, z, this.half + 1);
+    return h && h.s >= this.s0 + 1 && h.s <= this.s1 - 1 ? 0.3 : 0;
+  }
   /** Geländer (feste Rechtecke, Segmente je ~4 m entlang der Strecke) und Torbogen-Masten (Kreise) */
   obstacles(): { boxes: Box[]; circles: Circle[] } {
     const boxes: Box[] = [], circles: Circle[] = [];

@@ -100,7 +100,7 @@ export class BridgeMesh {
       const y0 = br.bed - 0.5, y1 = br.deckY(sc) - TH + 0.05, x0 = sc - 0.9, x1 = sc + 0.9, lw = half - 1;
       for (const [a, b, la, lb] of [[x0, x1, lw, lw], [x1, x1, lw, -lw], [x1, x0, -lw, -lw], [x0, x0, -lw, lw]] as number[][]) sp.quad(P(a, la, y0), P(b, lb, y0), P(b, lb, y1), P(a, la, y1), [0.18, 0.19, 0.26]);
     }
-    const deck = new THREE.Mesh(sp.geometry(false), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+    const deck = new THREE.Mesh(sp.geometry(false), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));   // Deck liegt bewusst auf dem Straßenband an den Enden
     deck.frustumCulled = false; this.group.add(deck);
     // Wasser (Fluss: eigene Fläche in RiverMesh)
     if (br.river) return;

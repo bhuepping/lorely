@@ -191,7 +191,7 @@ export function mountGame(root: HTMLElement): void {
     { const m = mini; m.box.onclick = () => openMap(); m.big.onclick = () => closeMap(); }
     // Foto von oben einmal, kurz nach dem Start (zwei Frames später, damit die Ladezeit gleich bleibt; Software-GL: ~1 s Ruckler, Grafikchip: Millisekunden); bis dahin gezeichneter Plan. Kosten in window.__rsMap
     { const g = sess, m = mini, size = MAP_PHOTO < 0 ? photoSize(mapExtent(course).span) : MAP_PHOTO; (window as any).__rsMap = { ms: 0, size, ok: false };
-      const shot = (ext: MapExt, sz: number) => capturePhoto(renderer, g.scene, ext, sz, [g.sky, g.carMesh.root, g.fx.points, g.rain?.mesh, g.moverMesh?.group, g.trafficMesh?.group, g.starMesh.mesh, g.cpMesh?.mesh, ...(g.beach?.photoHide ?? [])], store.get('rs-maptint') === '0' ? undefined : { length: course.route.length, half: course.roadWidth / 2, offset: (s, l) => course.route.offset(s, l) });   // rs-maptint=0: Messschalter ohne Tönung
+      const shot = (ext: MapExt, sz: number) => capturePhoto(renderer, g.scene, ext, sz, [g.sky, g.carMesh.root, g.fx.points, g.rain?.mesh, g.moverMesh?.group, g.trafficMesh?.group, g.ar?.mesh, g.starMesh.mesh, g.cpMesh?.mesh, ...(g.beach?.photoHide ?? [])], store.get('rs-maptint') === '0' ? undefined : { length: course.route.length, half: course.roadWidth / 2, offset: (s, l) => course.route.offset(s, l) });   // rs-maptint=0: Messschalter ohne Tönung
       if (size > 0) {
         mapTips = () => { m.tips = { near: t('mapNear'), far: t('mapFar') }; m.zoom.title = m.isNear ? m.tips.far : m.tips.near; }; mapTips();
         requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => {
@@ -327,6 +327,7 @@ export function mountGame(root: HTMLElement): void {
     const a = s.car.prevPose, b = s.car.pose;
     if (!(window as any).__rennspiel?.freeCam) updateCamera(s, dt, a.px + (b.px - a.px) * f, a.py + (b.py - a.py) * f, a.pz + (b.pz - a.pz) * f);
     s.moverMesh?.update(now / 1000); s.trafficMesh?.update();
+    s.ar?.update(s.run.tracker.s, now / 1000, s.run.state === 'run');
     if (s.ford) s.ford.update(dt, s.car.pos[0], s.car.pos[1] - 0.3, s.car.pos[2], s.car.speed, s.car.shallow > 0);
     if (s.course.tunnels.length) {   // im Tunnel: dunkler, Scheinwerfer an
       const ts = s.run.tracker.s, inT = s.course.tunnels.some((t) => ts > t.s0 + 3 && ts < t.s1 - 3) ? 1 : 0;

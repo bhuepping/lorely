@@ -1,7 +1,7 @@
 # Entwurf des fdroiddata-Rezepts (metadata/de.huepping.lorely.yml).
 # Summary/Description kommen aus fastlane/ im App-Repo.
 # F-Droid baut reproduzierbar nach und liefert unser eigenes signiertes APK aus (Binaries + AllowedAPKSigningKeys).
-# Vor dem Merge Request: `commit` auf den vollen Git-Hash des Tags setzen (Tag v0.1 und GitHub-Release mit APK müssen existieren).
+# Vor dem Merge Request: `commit` auf den vollen Git-Hash des Tags setzen (Tag v0.7 und GitHub-Release mit APK müssen existieren).
 # Node: offizielle Datei, Version und Prüfsumme wie in docs/build.md (nicht die Debian-Version, sonst kein Byte-gleiches APK).
 # Alles Bauen steht in `build:` (prebuild darf nichts bauen); node_modules/ entsteht erst nach dem Quellcode-Scan.
 
@@ -21,9 +21,9 @@ Binaries: https://github.com/bhuepping/lorely/releases/download/v%v/LoReLy-%v.ap
 AllowedAPKSigningKeys: f72dd4cc0dcd77bb91f5e18cd940a0332dd8ccfb933546334c74b8db07eda46f
 
 Builds:
-  - versionName: '0.1'
+  - versionName: '0.7'
     versionCode: 1
-    commit: v0.1
+    commit: v0.7
     subdir: android/app
     sudo:
       - curl -fsSLo /tmp/node.tar.gz https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.gz
@@ -42,5 +42,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '0.1'
+CurrentVersion: '0.7'
 CurrentVersionCode: 1

@@ -4,8 +4,11 @@ import type { GridTerrain } from '../physics/terrain';
 import type { Course } from '../level';
 
 /** Gelände in 4x4 Blöcken (Sichtkegel-Culling), ein gemeinsames Material. `colors` je Untergrund-Id. */
-export function buildTerrainMesh(t: GridTerrain, colors: number[], blocks = 4, surf: Uint8Array = t.surf): THREE.Group {
+export function buildTerrainMesh(t: GridTerrain, colors: number[], blocks = 4, surf: Uint8Array = t.surf, sink?: (x: number, z: number) => number): THREE.Group {
   const n = t.n, c = t.cell, cells = n - 1;
+  // nur fürs Auge: unter einem Brückendeck liegt das Gelände tiefer, damit es nicht in der Deckebene mitflimmert (Physik nutzt dort das Deck)
+  const H = sink ? Float32Array.from(t.h) : t.h;
+  if (sink) for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) H[j * n + i] -= sink(i * c - t.half, j * c - t.half);
   const cols = colors.map((h) => new THREE.Color(h));
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const group = new THREE.Group();
@@ -32,7 +35,7 @@ export function buildTerrainMesh(t: GridTerrain, colors: number[], blocks = 4, s
     };
     for (let j = cj; j < cj + nj; j++) for (let i = ci; i < ci + ni; i++) {
       const x0 = i * c - t.half, z0 = j * c - t.half, x1 = x0 + c, z1 = z0 + c;
-      const h00 = t.h[j * n + i], h10 = t.h[j * n + i + 1], h01 = t.h[(j + 1) * n + i], h11 = t.h[(j + 1) * n + i + 1];
+      const h00 = H[j * n + i], h10 = H[j * n + i + 1], h01 = H[(j + 1) * n + i], h11 = H[(j + 1) * n + i + 1];
       const color = cols[surf[j * cells + i]] ?? cols[0];
       const shade = (0.94 + 0.06 * ((((i * 73856093) ^ (j * 19349663)) >>> 0) % 7) / 6) * (0.955 + 0.09 * patch(i, j));   // feines Pixel-Rauschen + flächige Farbvariation
       // gleiche Teilung wie die Physik: (00,10,01) und (10,11,01)

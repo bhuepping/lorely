@@ -234,6 +234,71 @@ function lightTexture(): THREE.CanvasTexture {
   return _lightTex;
 }
 
+/** Beweglicher Fahrwerksteil des Buggys: Querlenker, Radträger und Federbein (gestreift wie eine Feder) je Rad in EINEM Mesh;
+ *  die Enden folgen jedes Bild dem Rad (Federweg), die oberen Enden sitzen fest an der Karosserie. Nur Optik. */
+class LinkMesh {
+  readonly mesh: THREE.Mesh;
+  private readonly pos: Float32Array; private readonly nor: Float32Array;
+  private static readonly STRIPES = 5;
+  private static readonly PER = 3 + LinkMesh.STRIPES;   // Boxen je Rad
+  constructor(private car: Vehicle, private doms: number[][], private w: number, private lowY: number, p: CarParams) {
+    const n = 4 * LinkMesh.PER * 36;
+    this.pos = new Float32Array(n * 3); this.nor = new Float32Array(n * 3);
+    const col = new Float32Array(n * 3), c = new THREE.Color();
+    const RED = 0xd8342a, DARK = 0x3a3c44, STEEL = 0xa8aab2;
+    for (let i = 0; i < 4; i++) for (let k = 0; k < LinkMesh.PER; k++) {
+      c.set(k < 3 ? STEEL : (k % 2 ? RED : DARK));
+      for (let v = 0; v < 36; v++) { const o = ((i * LinkMesh.PER + k) * 36 + v) * 3; col[o] = c.r; col[o + 1] = c.g; col[o + 2] = c.b; }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('normal', new THREE.BufferAttribute(this.nor, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    this.mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true }));
+    this.mesh.frustumCulled = false;
+    void p;
+  }
+  /** Quader von a nach b mit Querschnitt t x t2 an Platz `slot` schreiben */
+  private box(slot: number, a: number[], b: number[], t: number, t2: number): void {
+    let dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2]; const L = Math.hypot(dx, dy, dz) || 1e-6; dx /= L; dy /= L; dz /= L;
+    const up = Math.abs(dy) > 0.9 ? [1, 0, 0] : [0, 1, 0];
+    let ux = dy * up[2] - dz * up[1], uy = dz * up[0] - dx * up[2], uz = dx * up[1] - dy * up[0]; const ul = Math.hypot(ux, uy, uz) || 1; ux /= ul; uy /= ul; uz /= ul;
+    const vx = dy * uz - dz * uy, vy = dz * ux - dx * uz, vz = dx * uy - dy * ux;
+    const P: number[][] = [];
+    for (const e of [a, b]) for (const [su, sv] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) P.push([e[0] + ux * su * t / 2 + vx * sv * t2 / 2, e[1] + uy * su * t / 2 + vy * sv * t2 / 2, e[2] + uz * su * t / 2 + vz * sv * t2 / 2]);
+    const faces: [number[], number[]][] = [   // Ecken + Normale
+      [[0, 1, 2, 3], [-dx, -dy, -dz]], [[7, 6, 5, 4], [dx, dy, dz]],
+      [[0, 4, 5, 1], [-vx, -vy, -vz]], [[3, 2, 6, 7], [vx, vy, vz]],
+      [[0, 3, 7, 4], [-ux, -uy, -uz]], [[1, 5, 6, 2], [ux, uy, uz]],
+    ];
+    let o = slot * 36 * 3;
+    for (const [q, nv] of faces) for (const k of [0, 1, 2, 0, 2, 3]) {
+      const pt = P[q[k]]; this.pos[o] = pt[0]; this.pos[o + 1] = pt[1]; this.pos[o + 2] = pt[2];
+      this.nor[o] = nv[0]; this.nor[o + 1] = nv[1]; this.nor[o + 2] = nv[2]; o += 3;
+    }
+  }
+  update(wheels: { steer: THREE.Group }[]): void {
+    const { w, lowY } = this, S = LinkMesh.STRIPES;
+    for (let i = 0; i < 4; i++) {
+      const m = this.car.mount[i], sx = Math.sign(m[0]), h = wheels[i].steer.position, hw = i < 2 ? 0.1 : 0.23;
+      const cx = h.x - sx * (hw + 0.04), inX = sx * w * 0.3, z = m[2];
+      const Cl = [cx, h.y - 0.06, z], Cu = [cx, h.y + 0.14, z - 0.03];
+      const A1 = [inX, lowY + 0.24, z], A2 = [inX, lowY + 0.42, z - 0.1];
+      const base = i * LinkMesh.PER;
+      this.box(base, A1, Cl, 0.05, 0.04);                 // unterer Querlenker
+      this.box(base + 1, A2, Cu, 0.04, 0.03);             // oberer Querlenker
+      this.box(base + 2, Cl, Cu, 0.05, 0.05);             // Radträger
+      const top = this.doms[i], bot = [A1[0] + (Cl[0] - A1[0]) * 0.85, A1[1] + (Cl[1] - A1[1]) * 0.85 + 0.03, z + 0.03];
+      for (let k = 0; k < S; k++) {                        // Feder: abwechselnd rot/dunkel, wächst und schrumpft mit dem Federweg
+        const t0 = k / S, t1 = (k + 1) / S, at = (t: number) => [bot[0] + (top[0] - bot[0]) * t, bot[1] + (top[1] - bot[1]) * t, bot[2] + (top[2] - bot[2]) * t];
+        this.box(base + 3 + k, at(t0), at(t1), 0.12, 0.12);
+      }
+    }
+    (this.mesh.geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    (this.mesh.geometry.attributes.normal as THREE.BufferAttribute).needsUpdate = true;
+  }
+}
+
 export class CarMesh {
   readonly root = new THREE.Group();
   /** angewandter Lichtzustand (Test/Debug) */
@@ -243,6 +308,7 @@ export class CarMesh {
   private night = false;
   private lampN = 0; private fxN = 0;
   private wheels: { steer: THREE.Group; spin: THREE.Mesh }[] = [];
+  private links: LinkMesh | null = null;
   private mountY: number[]; private frontDrop = 0; private frontSpin = 1;
   constructor(private car: Vehicle, p: CarParams) {
     const bodyMat = new THREE.MeshLambertMaterial({ color: p.style === 'buggy' ? PALETTE.buggy : PALETTE.body });
@@ -267,18 +333,22 @@ export class CarMesh {
       const dome = new THREE.SphereGeometry(1, 8, 6).toNonIndexed(); dome.scale(w * 0.2, 0.2, 0.55); dome.translate(0, lowY + 0.38, -0.12); parts.push(withColor(dome, GLASS));   // Cockpit-Kuppel
       bx(0, lowY + 0.3, l * 0.5 - 0.04, w * 0.6, 0.2, 0.1, BODY);                    // Heckblende (Rücklichter sitzen darauf)
       bx(0, lowY + 0.35, l * 0.33, w * 0.42, 0.22, 0.44, DARK);                     // Motor (Oberkante über der Heckpartie: keine koplanare Fläche -> kein Flimmern)
-      bx(0, lowY + 0.45, -l * 0.5 - 0.05, w * 0.92, 0.07, 0.09, DARK);               // Frontbügel
-      for (const sx of [-1, 1]) { bx(sx * w * 0.42, lowY + 0.37, -l * 0.5 + 0.1, 0.06, 0.2, 0.06, DARK); bx(sx * w * 0.3, lowY + 0.3, -l * 0.5 + 0.02, 0.05, 0.05, 0.2, DARK); }
+      // Frontbügel: Querstange an der Nasenspitze, zwei kurze Streben zurück an die Nase (alles berührt die Wanne)
+      bx(0, lowY + 0.3, -l * 0.5 - 0.06, w * 0.54, 0.07, 0.09, DARK);
+      for (const sx of [-1, 1]) bx(sx * w * 0.255, lowY + 0.3, -l * 0.5 + 0.09, 0.05, 0.05, 0.3, DARK);
       // Heckspoiler: zwei Stützen + Flügel + Endplatten (rot)
       for (const sx of [-1, 1]) { bx(sx * w * 0.26, lowY + 0.68, l * 0.44, 0.06, 0.62, 0.06, STEEL); bx(sx * w * 0.5, lowY + 0.95, l * 0.46, 0.04, 0.26, 0.5, RED); }
       bx(0, lowY + 0.95, l * 0.46, w, 0.05, 0.46, RED); bx(0, lowY + 0.99, l * 0.5, w, 0.04, 0.2, DARK);
-      // Querlenker + Federbeine je Rad
+      // Federbeindome auf der Wanne (statisch); Querlenker und Federbeine sind beweglich (`LinkMesh`, folgen den Rädern)
+      const doms: number[][] = [];
       car.mount.forEach((m) => {
-        const sx = Math.sign(m[0]), wx = m[0], z = m[2], inX = sx * w * 0.3, len = Math.abs(wx - inX);
-        bx((wx + inX) / 2, lowY + 0.24, z, len, 0.04, 0.05, STEEL);                    // unterer Querlenker
-        bx((wx + inX) / 2, lowY + 0.42, z - 0.1, len, 0.03, 0.04, STEEL);              // oberer
-        bx(sx * (Math.abs(wx) * 0.78), lowY + 0.45, z + 0.08, 0.07, 0.42, 0.07, RED, -sx * 0.5);   // Federbein, schräg
+        const sx = Math.sign(m[0]), z = m[2], base = z < 0 ? lowY + 0.27 : lowY + 0.41;   // Oberseite der Wanne bzw. Heckpartie an der Radachse
+        const dx = sx * w * 0.26;
+        bx(dx, base + 0.14, z + 0.05, 0.13, 0.32, 0.13, DARK);
+        doms.push([dx + sx * 0.03, base + 0.3, z + 0.05]);
       });
+      this.links = new LinkMesh(car, doms, w, lowY, p);
+      this.root.add(this.links.mesh);
       const body = new THREE.Mesh(mergeGeometries(parts)!, new THREE.MeshLambertMaterial({ vertexColors: true })); this.root.add(body);
     } else {
       this.root.add(buildHatchBody(p, car.mount));
@@ -299,8 +369,9 @@ export class CarMesh {
     this.frontDrop = p.wheelRadius - RF; this.frontSpin = p.wheelRadius / RF;
     const tyre = new THREE.MeshLambertMaterial({ color: PALETTE.tyre });
     const rim = new THREE.MeshLambertMaterial({ color: PALETTE.rim });
-    const hub = new THREE.BoxGeometry(0.24, 0.12, 0.5);  // Speiche: macht die Drehung sichtbar
-    const hubF = new THREE.BoxGeometry(0.2, 0.09, 0.36);
+    // Speiche: macht die Drehung sichtbar; steht 1 cm über die Reifenflanke (gleich breit wäre koplanar und flimmert)
+    const hub = new THREE.BoxGeometry(bug || jp ? 0.24 : 0.26, 0.12, 0.5);
+    const hubF = new THREE.BoxGeometry(0.22, 0.09, 0.36);
     this.mountY = car.mount.map((m) => m[1]);
     for (let i = 0; i < 4; i++) {
       const steer = new THREE.Group();
@@ -404,5 +475,6 @@ export class CarMesh {
       w.steer.rotation.y = i < 2 ? -(a.steer + (b.steer - a.steer) * f) : 0;
       w.spin.rotation.x = -(a.spin[i] + (b.spin[i] - a.spin[i]) * f) * (i < 2 ? this.frontSpin : 1);
     }
+    this.links?.update(this.wheels);
   }
 }

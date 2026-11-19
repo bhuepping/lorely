@@ -26,7 +26,7 @@ Umgebungsvariablen für die Browser-Tests und -Werkzeuge:
 
 ## Android (Capacitor 6)
 Der Vite-Build (`dist/`) steckt in einer Capacitor-App (`android/`). Keine Berechtigungen, keine Netzzugriffe.
-appId `de.huepping.lorely`, Version 0.1 / Code 1 (`android/app/build.gradle`). Voraussetzung: JDK 21 (wie der F-Droid-Buildserver; mit 17 entsteht ein anderes classes.dex), Android SDK 34.
+appId `de.huepping.lorely`, Version 0.7 / Code 1 (`android/app/build.gradle`). Voraussetzung: JDK 21 (wie der F-Droid-Buildserver; mit 17 entsteht ein anderes classes.dex), Android SDK 34.
 ```sh
 npm ci && npm run build && npx cap sync android     # dist/ -> android/app/src/main/assets/public
 cd android

@@ -12,7 +12,7 @@ import { buildFlag, buildBrook, buildLogs, buildGoalCircle } from './offroadmesh
 import { Movers, barrierParking } from './movers';
 import { CheckMesh } from './cpmesh';
 import { buildNetRoad } from './netmesh';
-import { buildTurnArrows } from './netarrows';
+import { TurnAR } from './netar';
 import { buildSuburb, StartLight } from './suburbmesh';
 import { makeTraffic, type TrafficLike } from './traffic';
 import { TrafficMesh } from './trafficmesh';
@@ -31,7 +31,7 @@ export const CD_GO = 2;   // s bis Grün (rot bei 0 und 1)
 export interface Session {
   entry: LevelEntry; carId: string; course: Course; run: Run; car: Vehicle; props: Props; obst: Obstacles; forest: ForestMesh | null; beach: BeachScene | null;
   bridgeMesh: BridgeMesh | null; riverMesh: RiverMesh | null; pylons: PylonMesh; carMesh: CarMesh; starMesh: StarMesh; cpMesh: CheckMesh | null; scene: THREE.Scene;
-  sky: THREE.Mesh; movers: Movers | null; moverMesh: MoverMesh | null; traffic: TrafficLike | null; trafficMesh: TrafficMesh | null; ford: FordMesh | null; startLight: StartLight | null; fx: Fx; hemi: THREE.HemisphereLight; sunL: THREE.DirectionalLight; base: [number, number]; dark: boolean; tunnelF: number; cd: number; sigT: number; rain: RainMesh | null;
+  ar: TurnAR | null; sky: THREE.Mesh; movers: Movers | null; moverMesh: MoverMesh | null; traffic: TrafficLike | null; trafficMesh: TrafficMesh | null; ford: FordMesh | null; startLight: StartLight | null; fx: Fx; hemi: THREE.HemisphereLight; sunL: THREE.DirectionalLight; base: [number, number]; dark: boolean; tunnelF: number; cd: number; sigT: number; rain: RainMesh | null;
   endAt: number; endHandled: boolean; newBest: boolean;
   /** Rand der Welt (nur Level mit `edge`): Wächter + Restzeit (s), in der das Auto beim Wiederauftauchen noch unsichtbar ist */
   edge: EdgeGuard | null;
@@ -86,10 +86,10 @@ export function buildSession(entry: LevelEntry, m: Mode, cid: string, audio: Gam
   const bridgeMesh = course.bridge ? new BridgeMesh(course) : null; if (bridgeMesh) scene.add(bridgeMesh.group);
   for (const b of course.bridges) if (b !== course.bridge) scene.add(new BridgeMesh(course, b).group);   // Netz-Level: Brücken auf Kanten
   lap('verkehr+rest');
-  scene.add(buildTerrainMesh(course.terrain, course.surfaceColors, night || dusk || gold ? 3 : 4, course.meshSurf), pylons.mesh);
+  scene.add(buildTerrainMesh(course.terrain, course.surfaceColors, night || dusk || gold ? 3 : 4, course.meshSurf, course.bridges.length ? (x, z) => { for (const b of course.bridges) { const v = b.sink(x, z); if (v) return v; } return 0; } : undefined), pylons.mesh);
   lap('gelaende');
   const road = course.net ? buildNetRoad(course) : buildRoadMesh(course); if (road) { road.userData.mapTint = true; scene.add(road); }
-  const arrows = course.net ? buildTurnArrows(course) : null; if (arrows) scene.add(arrows);
+  const ar = course.net ? new TurnAR(course) : null; if (ar) scene.add(ar.mesh);
   lap('strasse');
   const obst = new Obstacles(course.obstacles.circles, course.obstacles.boxes);
   const fx = new Fx(course, night || dusk); scene.add(fx.points);
@@ -119,7 +119,7 @@ export function buildSession(entry: LevelEntry, m: Mode, cid: string, audio: Gam
   const carMesh = new CarMesh(car, CP); carMesh.setNight(night || dusk); scene.add(carMesh.root);
   camera.far = course.fog.far * 1.6 + 40; camera.updateProjectionMatrix();
   lap('ende'); (window as unknown as { __rsLoad: Record<string, number> }).__rsLoad = lt;
-  return { aidAt: aidField(course), entry, carId: cid, course, run, car, props, obst, forest, beach, sky, movers, moverMesh, traffic, trafficMesh, ford, startLight, fx, hemi, sunL: sun, base: [hemi.intensity, sun.intensity], dark: night, tunnelF: 0, rain, cd: store.get('rs-cd') === '0' ? 9 : -0.5, sigT: 0, bridgeMesh, riverMesh, pylons, carMesh, starMesh, cpMesh, scene, endAt: 0, endHandled: false, newBest: false, edge: course.edge ? new EdgeGuard(course.edge) : null };
+  return { aidAt: aidField(course), entry, carId: cid, course, run, car, props, obst, forest, beach, ar, sky, movers, moverMesh, traffic, trafficMesh, ford, startLight, fx, hemi, sunL: sun, base: [hemi.intensity, sun.intensity], dark: night, tunnelF: 0, rain, cd: store.get('rs-cd') === '0' ? 9 : -0.5, sigT: 0, bridgeMesh, riverMesh, pylons, carMesh, starMesh, cpMesh, scene, endAt: 0, endHandled: false, newBest: false, edge: course.edge ? new EdgeGuard(course.edge) : null };
 }
 
 /** Szene freigeben (Geometrien, Materialien, Texturen) */
