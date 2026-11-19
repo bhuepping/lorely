@@ -12,6 +12,12 @@ if (keystorePropsFile.exists()) {
 android {
     namespace "de.huepping.lorely"
     compileSdk rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    // Keine Abhängigkeits-Metadaten im APK (verschlüsselter Block, nicht reproduzierbar).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
     defaultConfig {
         applicationId "de.huepping.lorely"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -65,12 +71,3 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
-
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
-}
