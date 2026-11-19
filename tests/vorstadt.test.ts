@@ -170,16 +170,17 @@ describe('Vorstadt: Au-Abzweig', () => {
     expect(inArc.length).toBeGreaterThanOrEqual(3); expect(inArc.length).toBeLessThanOrEqual(4);
     for (const [x, z] of inArc) expect(net.onRoad(x, z, 0.5), 'Stern auf der Fahrbahn').toBe(true);
   });
-  it('Verpasst man die Abzweigung (geradeaus auf der Oberen), kommt der Pfeil schon nach < 1,6 s – anderswo (hier: Obere vor der Brücke, quer weg) erst nach ~2 s', () => {
+  it('Vor dem Abzweig zeigt der Pfeil schon auf Kurs die Richtung – anderswo (hier: Obere vor der Brücke, quer weg) kommt er erst nach ~2 s Abweichung', () => {
     const arrowAfter = (s0: number): number => {   // Route bis s0 sauber abfahren (Checkpoints), dann geradeaus weiter
       const run = new Run(c, 'time'), v = 12, dt = 1 / 60;
       for (let s = 1; s < s0; s += v * dt) { const a = c.route.at(s); run.update(dt, a.x, a.z, true, a.dx * v, a.dz * v); }
-      const a = c.route.at(s0); expect(run.arrowOn, 'auf Kurs kein Pfeil').toBe(false);
+      const a = c.route.at(s0); if (s0 > sOf - 60) return 0;   // vor dem Abzweig ist der Pfeil schon an (auf Kurs)
+      expect(run.arrowOn, 'auf Kurs kein Pfeil').toBe(false);
       for (let t = 0; t < 5; t += dt) { run.update(dt, a.x + a.dx * v * t, a.z + a.dz * v * t, true, a.dx * v, a.dz * v); if (run.arrowOn) return t; }
       return 5;
     };
     const tAu = arrowAfter(sOf - 12), tElse = arrowAfter(1250);   // 300: gerade Strecke, quer weg
-    expect(tAu).toBeLessThan(1.6); expect(tElse).toBeGreaterThan(ARROW_DELAY - 0.2);
+    expect(tAu).toBe(0); expect(tElse).toBeGreaterThan(ARROW_DELAY - 0.2);
   });
 });
 
