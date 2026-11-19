@@ -4,7 +4,7 @@
 #   tools/repro-check.sh [REPO=.] [COMMIT=HEAD] [SIGNIERTES.apk]
 # Umgebung (Standard in Klammern): JAVA_HOME (aus PATH), ANDROID_HOME (ANDROID_SDK_ROOT), GRADLE_USER_HOME ($HOME/.gradle),
 #   ANDROID_USER_HOME ($HOME/.android), npm_config_cache ($HOME/.npm), APKSIGCOPIER (apksigcopier im PATH), KEEP=1 behält die Build-Ordner.
-# Platz: ca. 1 GB je Lauf (node_modules, Gradle-Ausgabe); Dauer: erster Lauf ~5 min, mit warmem Cache ~3 min.
+# Platz: ca. 1 GB je Lauf (node_modules, Gradle-Ausgabe); Dauer: kalt ~5 min, mit warmem Cache ~1 min.
 # Letzte Zeile: "REPRO OK <sha256>" (Exit 0) oder "REPRO FAIL <Grund>" (Exit 1).
 set -u
 REPO=$(cd "${1:-.}" && pwd); COMMIT=${2:-HEAD}; SIGNED=${3:-}
@@ -51,6 +51,7 @@ SHA=$(sha256sum "$WORK/a.apk" | cut -d' ' -f1)
 
 if [ -n "$SIGNED" ]; then
   AS=${APKSIGCOPIER:-apksigcopier}
+  BT=$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -n 1); [ -n "$BT" ] && export PATH="$BT:$PATH"   # apksigner
   command -v "$AS" >/dev/null || fail "apksigcopier fehlt (APKSIGCOPIER)"
   "$AS" compare "$SIGNED" --unsigned "$WORK/a.apk" || fail "Signiertes APK passt nicht zum Nachbau"
 fi
