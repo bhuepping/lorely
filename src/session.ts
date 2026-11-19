@@ -12,6 +12,7 @@ import { buildFlag, buildBrook, buildLogs, buildGoalCircle } from './offroadmesh
 import { Movers, barrierParking } from './movers';
 import { CheckMesh } from './cpmesh';
 import { buildNetRoad } from './netmesh';
+import { buildTurnArrows } from './netarrows';
 import { buildSuburb, StartLight } from './suburbmesh';
 import { makeTraffic, type TrafficLike } from './traffic';
 import { TrafficMesh } from './trafficmesh';
@@ -88,6 +89,7 @@ export function buildSession(entry: LevelEntry, m: Mode, cid: string, audio: Gam
   scene.add(buildTerrainMesh(course.terrain, course.surfaceColors, night || dusk || gold ? 3 : 4, course.meshSurf), pylons.mesh);
   lap('gelaende');
   const road = course.net ? buildNetRoad(course) : buildRoadMesh(course); if (road) { road.userData.mapTint = true; scene.add(road); }
+  const arrows = course.net ? buildTurnArrows(course) : null; if (arrows) scene.add(arrows);
   lap('strasse');
   const obst = new Obstacles(course.obstacles.circles, course.obstacles.boxes);
   const fx = new Fx(course, night || dusk); scene.add(fx.points);
