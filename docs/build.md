@@ -48,7 +48,7 @@ Karte zu, Pause → weiter, Rennen → Pause, Menü → App beenden. Vollbild-Kn
 Gleicher Quellstand ergibt Byte für Byte dasselbe APK (Voraussetzung für F-Droid mit eigener Signatur).
 | Werkzeug | Version |
 |---|---|
-| Node | 22.14.0 (`node-v22.14.0-linux-x64.tar.xz`, sha256 `69b09dba5c8dcb05c4e4273a4340db1005abeafe3927efda2bc5b249e80437ec`) |
+| Node | 22.14.0 (`node-v22.14.0-linux-x64.tar.gz`, sha256 `9d942932535988091034dc94cc5f42b6dc8784d6366df3a36c4c9ccb3996f0c2`; gzip, weil der Buildserver kein xz hat) |
 | npm-Pakete | `package-lock.json` (`npm ci`) |
 | JDK | 17 |
 | Gradle | 8.2.1, `distributionSha256Sum` im Wrapper |
