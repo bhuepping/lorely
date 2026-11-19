@@ -39,11 +39,13 @@ describe('Vorstadt: Abbiegen sichtbar', () => {
     }
     expect(bad, 'Pfeil nur in den Zonen').toBeLessThanOrEqual(3);
     expect(on.some(Boolean) && on.some((o) => !o)).toBe(true);
-    // Zielpunkt liegt vorn auf der Runde
+    // Zielpunkt liegt hinter dem Abzweig: der Pfeil zeigt vorab deutlich nach rechts
     const t = turns[0], r2 = new Run(c, 'time'); const a = c.route.at(t.s - 50);
     for (let s = 1; s < t.s - 50; s += v * dt) { const q = c.route.at(s); r2.update(dt, q.x, q.z, true, q.dx * v, q.dz * v); }
     r2.update(dt, a.x, a.z, true, a.dx * v, a.dz * v);
     expect(r2.arrowOn).toBe(true);
-    const g = c.route.at(t.s - 50 + 30); expect(Math.hypot(r2.aim.x - g.x, r2.aim.z - g.z)).toBeLessThan(2);
+    const hd = Math.atan2(a.dz, a.dx), to = Math.atan2(r2.aim.z - a.z, r2.aim.x - a.x);
+    let ang = (to - hd) * 180 / Math.PI; ang = ((ang + 540) % 360) - 180;
+    expect(ang * t.side, 'Winkel zur Abbiegerichtung (Grad)').toBeGreaterThan(30);
   });
 });

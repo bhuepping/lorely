@@ -44,5 +44,9 @@ for (const q of list) {
   await place(q.s + 45); await sleep(2500); st = await state();
   if (st.on || st.nav) fail(`HUD-Pfeil nach dem Abbiegen noch an (${Math.round(q.s)})`);
 }
+for (const [k, q] of list.entries()) {
+  n = k + 1;
+  if (n === 1 || n === 3) for (const d of [40, 25, 10]) { await page.evaluate((s) => { const g = window.__rennspiel, r = g.session.course.route, p = r.at(s), lat = -(g.session.course.net.nearest(p.x, p.z)?.edge.half ?? 5) / 2, x = p.x + p.dz * lat, z = p.z - p.dx * lat; g.car.reset(x, z, Math.atan2(-p.dx, -p.dz)); }, q.s - d - 8); await sleep(900); await page.screenshot({ path: `${SC}/abzweig-${n}-${q.side}-${d}m.png` }); }
+}
 await page.keyboard.up('ArrowUp');
 console.log(fails ? 'FEHLER: ' + fails : 'ok'); await b.close(); srv.kill(); process.exit(fails ? 1 : 0);

@@ -64,6 +64,7 @@ export const ARROW_OFF_ZONE = 0.45;  // dasselbe in einer Pfeilzone (Abzweig)
 export const ARROW_OFF = 1.5;       // × Straßenbreite neben der Streckenmitte gilt als abseits
 const ARROW_AHEAD = 30;             // m voraus auf der Strecke, wohin der Pfeil zeigt
 const ARROW_TURN_AHEAD = 60;        // m vor einem Abzweig im Straßennetz (Vorstadt) zeigt der Pfeil schon vorab die Richtung der Runde
+const ARROW_TURN_AIM = 40;          // m hinter dem Abzweig liegt der Zielpunkt des Pfeils (er zeigt die Abbiegung, nicht geradeaus)
 const ARROW_DECAY = 4;              // Abbau des Zählers je Sekunde auf Kurs (Pfeil geht nach ~ARROW_DELAY/4 s weg)
 
 export class Run {
@@ -139,7 +140,7 @@ export class Run {
   }
 
   /** Abzweig im Straßennetz voraus (oder gerade im Abbiegen)? */
-  private nearTurn(s: number): boolean { return !!this.course.net && turnsOf(this.course).some((q) => s >= q.s - ARROW_TURN_AHEAD && s <= q.sEnd); }
+  private turnAhead(s: number) { return this.course.net ? turnsOf(this.course).find((q) => s >= q.s - ARROW_TURN_AHEAD && s <= q.sEnd) : undefined; }
 
   private guide(dt: number, vx: number, vz: number): void {
     const tr = this.tracker, c = this.course, sp = Math.hypot(vx, vz), a = c.route.at(tr.s);
@@ -148,10 +149,11 @@ export class Run {
     const off = Math.abs(tr.d) > (zone ? ARROW_OFF_ZONE : ARROW_OFF) * c.roadWidth;
     this.badT = wrong || off ? Math.min(this.badT + dt, ARROW_DELAY + 1) : Math.max(0, this.badT - dt * ARROW_DECAY);
     if (this.badT >= delay) this.arrowOn = true; else if (this.badT <= 0) this.arrowOn = false;
-    if (this.missed >= 0 || this.nearTurn(tr.s)) this.arrowOn = true;
+    const turn = this.turnAhead(tr.s);
+    if (this.missed >= 0 || turn) this.arrowOn = true;
     if (this.arrowOn) {
       if (this.missed >= 0) { const q = this.cps!.list[this.missed]; this.aim.x = q.x; this.aim.z = q.z; }
-      else { const q = c.route.at(Math.min(c.length, tr.s + ARROW_AHEAD)); this.aim.x = q.x; this.aim.z = q.z; }
+      else { const q = c.route.at(Math.min(c.length, turn ? turn.sEnd + ARROW_TURN_AIM : tr.s + ARROW_AHEAD)); this.aim.x = q.x; this.aim.z = q.z; }
     }
   }
 }
