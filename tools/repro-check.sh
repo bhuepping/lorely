@@ -17,6 +17,8 @@ WORK=$(mktemp -d "${TMPDIR:-/tmp}/repro.XXXXXX")
 cleanup() { [ "${KEEP:-}" = 1 ] && echo "Build-Ordner: $WORK" || rm -rf "$WORK"; }
 trap cleanup EXIT
 fail() { echo "REPRO FAIL $*"; exit 1; }
+# F-Droid baut mit JDK 21; eine andere Version erzeugt anderen Java-Bytecode und damit ein anderes classes.dex.
+java -version 2>&1 | head -n 1 | grep -q '"21\.' || fail "JDK 21 nötig (JAVA_HOME/PATH), gefunden: $(java -version 2>&1 | head -n 1)"
 
 build() { # Name, Zeitzone, umask
   local n=$1 dir=$WORK/$1/quelle-$1

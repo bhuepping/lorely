@@ -26,7 +26,7 @@ Umgebungsvariablen für die Browser-Tests und -Werkzeuge:
 
 ## Android (Capacitor 6)
 Der Vite-Build (`dist/`) steckt in einer Capacitor-App (`android/`). Keine Berechtigungen, keine Netzzugriffe.
-appId `de.huepping.lorely`, Version 0.1 / Code 1 (`android/app/build.gradle`). Voraussetzung: JDK 17, Android SDK 34.
+appId `de.huepping.lorely`, Version 0.1 / Code 1 (`android/app/build.gradle`). Voraussetzung: JDK 21 (wie der F-Droid-Buildserver; mit 17 entsteht ein anderes classes.dex), Android SDK 34.
 ```sh
 npm ci && npm run build && npx cap sync android     # dist/ -> android/app/src/main/assets/public
 cd android
@@ -50,7 +50,7 @@ Gleicher Quellstand ergibt Byte für Byte dasselbe APK (Voraussetzung für F-Dro
 |---|---|
 | Node | 22.14.0 (`node-v22.14.0-linux-x64.tar.gz`, sha256 `9d942932535988091034dc94cc5f42b6dc8784d6366df3a36c4c9ccb3996f0c2`; gzip, weil der Buildserver kein xz hat) |
 | npm-Pakete | `package-lock.json` (`npm ci`) |
-| JDK | 17 |
+| JDK | 21 (Rezept installiert openjdk-21 und stellt es ein) |
 | Gradle | 8.2.1, `distributionSha256Sum` im Wrapper |
 | Android-Gradle-Plugin | 8.2.1 |
 | Build-Tools / compileSdk / targetSdk / minSdk | 34.0.0 / 34 / 34 / 22 |
