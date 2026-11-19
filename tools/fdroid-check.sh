@@ -22,7 +22,8 @@ IMAGE=${IMAGE:-registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie}
 if [ -z "${DOCKER:-}" ]; then
   if docker info >/dev/null 2>&1; then DOCKER=docker; else DOCKER="sudo docker"; fi
 fi
-WORK=$(mktemp -d "${TMPDIR:-/tmp}/fdroid.XXXXXX"); chmod 777 "$WORK"; trap 'rm -rf "$WORK"' EXIT
+# Arbeitsordner im Repo, nicht unter /tmp: Docker als Snap sieht nur einen eigenen /tmp, nur das Home ist geteilt.
+WORK="$HERE/fdroid-work"; rm -rf "$WORK"; mkdir -p "$WORK"; chmod 777 "$WORK"; trap 'rm -rf "$WORK"' EXIT
 fail() { echo "FDROID FAIL $*"; exit 1; }
 
 COMMIT=$(git -C "$CLONE" rev-parse "$REV^{commit}") || fail "Commit nicht gefunden"

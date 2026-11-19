@@ -14,3 +14,4 @@ keystore.properties
 HANDOFF.md
 fdroid-check.log
 *.apk.commit
+fdroid-work/
