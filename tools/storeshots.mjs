@@ -32,7 +32,10 @@ for (const lang of ['de-DE', 'en-US']) for (const [w, h] of [[W, H], [H, W]]) {
     await pg.waitForSelector('#rs-speed', { state: 'visible' }); await sleep(600);
     await pg.evaluate((sc) => {
       const g = window.__rennspiel, S = g.session, c = S.course;
-      if (sc.turn !== undefined) { const q = S.ar.turns[sc.turn], p = c.route.at(q.s - (innerWidth > innerHeight && sc.backQ ? sc.backQ : sc.back)); g.car.reset(p.x, p.z, Math.atan2(-p.dx, -p.dz)); }
+      if (sc.turn !== undefined) { const q = S.ar.turns[sc.turn], p = c.route.at(q.s - (innerWidth > innerHeight && sc.backQ ? sc.backQ : sc.back)); g.car.reset(p.x, p.z, Math.atan2(-p.dx, -p.dz));
+        // Mitten in der Strecke: Uhr und Checkpoints passend zum Fortschrittsbalken (Schnitt ~50 km/h)
+        const r = S.run, at = c.route.nearest(p.x, p.z).s; r.elapsed = at / 14;
+        if (r.cps) r.cps.list.forEach((k, i) => { if (k.s < at) r.cps.got[i] = 1; }); }
     }, sc);
     if (sc.turn !== undefined) await sleep(1800);   // Kamera holt auf
     await pg.evaluate((v) => window.__rennspiel.car.launch(v), sc.v);
