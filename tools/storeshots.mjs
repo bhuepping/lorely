@@ -39,7 +39,7 @@ for (const lang of ['de-DE', 'en-US']) for (const [w, h] of [[W, H], [H, W]]) {
     for (const k of sc.keys ?? []) await pg.keyboard.down(k);
     await sleep(sc.wait);
     if (sc.freeze) { await pg.keyboard.press('KeyP'); await pg.addStyleTag({ content: '#rs-pause{display:none!important}' }); await sleep(300); }   // Bild einfrieren: Auto bleibt auf der Straße
-    await pg.screenshot({ path: `${OUT}/${lang}/images/phoneScreenshots/${++n}.png` });
+    await pg.screenshot({ path: `${OUT}/${lang}/images/phoneScreenshots/${++n}.png`, clip: { x: 0, y: 0, width: ((w === W ? 1080 : 2400) + .4) / DSF, height: ((w === W ? 2400 : 1080) + .4) / DSF } });   // Pixel 8: 1080x2400
     await pg.close();
   }
   await ctx.close();
