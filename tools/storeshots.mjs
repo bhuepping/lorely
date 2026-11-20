@@ -2,7 +2,7 @@
 // erst hochkant (1-3), dann quer (4-6).
 // Aufruf (vorher npm run build): node tools/storeshots.mjs   -> fastlane/metadata/android/{de-DE,en-US}/images/phoneScreenshots/1-6.png
 import { chromium } from 'playwright-core';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { readdirSync, mkdirSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 const PW = process.env.PLAYWRIGHT_BROWSERS_PATH || `${process.env.HOME}/.cache/ms-playwright`;
@@ -39,9 +39,14 @@ for (const lang of ['de-DE', 'en-US']) for (const [w, h] of [[W, H], [H, W]]) {
     for (const k of sc.keys ?? []) await pg.keyboard.down(k);
     await sleep(sc.wait);
     if (sc.freeze) { await pg.keyboard.press('KeyP'); await pg.addStyleTag({ content: '#rs-pause{display:none!important}' }); await sleep(300); }   // Bild einfrieren: Auto bleibt auf der Straße
-    await pg.screenshot({ path: `${OUT}/${lang}/images/phoneScreenshots/${++n}.png`, clip: { x: 0, y: 0, width: ((w === W ? 1080 : 2400) + .4) / DSF, height: ((w === W ? 2400 : 1080) + .4) / DSF } });   // Pixel 8: 1080x2400
+    await pg.screenshot({ path: `${OUT}/${lang}/images/phoneScreenshots/${++n}.png` });
     await pg.close();
   }
   await ctx.close();
 }
 await b.close(); srv.kill();
+// Chrome rundet 914 CSS-px auf 2402 Bildpunkte; auf Pixel-8-Maß 1080x2400 zuschneiden (unten bzw. rechts).
+spawnSync('python3', ['-I', '-c', `import sys, glob
+from PIL import Image
+for f in glob.glob(sys.argv[1] + '/*/images/phoneScreenshots/*.png'):
+    i = Image.open(f); w, h = i.size; i.crop((0, 0, min(w, 2400 if w > h else 1080), min(h, 2400 if h > w else 1080))).save(f)`, OUT], { stdio: 'inherit' });
